@@ -1,7 +1,7 @@
 import {
   LayoutDashboard,
   BookOpen,
-  Plug,
+  Cable,
   FileText,
   Settings,
   type LucideIcon,
@@ -12,7 +12,7 @@ export type NavItem = {
   icon: LucideIcon;
   href: string;
   disabled?: boolean;
-  badge?: "new";
+  badge?: "rocket";
 };
 
 export type NavGroup = {
@@ -25,8 +25,8 @@ export const navGroups: NavGroup[] = [
     label: "Home",
     items: [
       { label: "My Dashboard", icon: LayoutDashboard, href: "#dashboard" },
-      { label: "Playbooks", icon: BookOpen, href: "#playbooks", disabled: true, badge: "new" },
-      { label: "Integrations", icon: Plug, href: "#integrations" },
+      { label: "Playbooks", icon: BookOpen, href: "#playbooks", disabled: true, badge: "rocket" },
+      { label: "Integrations", icon: Cable, href: "#integrations" },
     ],
   },
   {

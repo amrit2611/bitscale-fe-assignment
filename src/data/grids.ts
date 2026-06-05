@@ -1,6 +1,5 @@
 import {
   FileSpreadsheet,
-  Linkedin,
   Briefcase,
   Building2,
   Upload,
@@ -39,7 +38,7 @@ export const gridRows: GridRow[] = [
     id: "2",
     name: "LinkedIn",
     type: "linkedin",
-    icon: Linkedin,
+    icon: Briefcase,
     iconColor: "text-blue-600",
     editedBy: { name: "Chris Parker" },
     lastEdited: "06 Aug, 2025",
