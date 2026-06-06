@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, ChevronDown, Save, Eye, SearchX, Lock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, ChevronDown, Save, Eye, SearchX, Lock, X as XIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { findPeopleFields } from "@/data/findPeopleFields";
-import { StreamingSuggestion } from "@/components/StreamingSuggestion";
+import { StreamingSuggestion, type Suggestion } from "@/components/StreamingSuggestion";
+import { cn } from "@/lib/utils";
 
 type FindPeopleModalProps = {
   open: boolean;
@@ -20,6 +21,7 @@ const resultColumns = ["NAME", "TITLE", "HEADLINE", "LINKEDIN URL", "COMPANY", "
 export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedKeyword(keyword.trim()), 500);
@@ -30,8 +32,24 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
     if (!open) {
       setKeyword("");
       setDebouncedKeyword("");
+      setFilters({});
     }
   }, [open]);
+
+  const appliedFieldIds = useMemo(() => new Set(Object.keys(filters)), [filters]);
+  const appliedCount = appliedFieldIds.size;
+
+  const handleApply = (suggestion: Suggestion) => {
+    setFilters((prev) => ({ ...prev, [suggestion.fieldId]: suggestion.value }));
+  };
+
+  const handleClearFilter = (fieldId: string) => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
+  };
 
   const showStreaming = debouncedKeyword.length >= 3;
 
@@ -42,7 +60,14 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
         <div className="flex h-[600px]">
           <div className="w-80 border-r border-zinc-200 bg-white flex flex-col shrink-0">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900">Find People</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-zinc-900">Find People</h2>
+                {appliedCount > 0 && (
+                  <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold">
+                    {appliedCount}
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 className="text-xs text-zinc-500 hover:text-zinc-700 inline-flex items-center gap-1"
@@ -57,11 +82,18 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
               {findPeopleFields.map((field) => {
                 const Icon = field.icon;
                 const isKeyword = field.id === "keyword";
+                const filterValue = filters[field.id];
+                const hasFilter = Boolean(filterValue);
                 return (
                   <div key={field.id}>
                     <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 mb-1.5">
                       <Icon className="size-4 text-zinc-500" />
                       {field.label}
+                      {hasFilter && (
+                        <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-full">
+                          AI
+                        </span>
+                      )}
                     </label>
                     {field.type === "input" ? (
                       <input
@@ -74,11 +106,28 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
                     ) : (
                       <button
                         type="button"
-                        className="w-full h-9 px-3 rounded-lg bg-zinc-50 border border-zinc-200 text-sm text-zinc-400 flex items-center justify-between hover:border-zinc-300"
-                        onClick={() => console.info(`[bitscale-demo] ${field.label} dropdown — coming soon`)}
+                        className={cn(
+                          "w-full h-9 px-3 rounded-lg border text-sm flex items-center justify-between transition-colors",
+                          hasFilter
+                            ? "bg-indigo-50/60 border-indigo-200 text-indigo-900 hover:bg-indigo-50"
+                            : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:border-zinc-300"
+                        )}
+                        onClick={() => {
+                          if (hasFilter) {
+                            handleClearFilter(field.id);
+                          } else {
+                            console.info(`[bitscale-demo] ${field.label} dropdown — coming soon`);
+                          }
+                        }}
                       >
-                        <span>{field.placeholder}</span>
-                        <ChevronDown className="size-4 text-zinc-400" />
+                        <span className="truncate">
+                          {hasFilter ? filterValue : field.placeholder}
+                        </span>
+                        {hasFilter ? (
+                          <XIcon className="size-4 text-indigo-400 shrink-0" />
+                        ) : (
+                          <ChevronDown className="size-4 text-zinc-400 shrink-0" />
+                        )}
                       </button>
                     )}
                   </div>
@@ -132,7 +181,12 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
             </div>
 
             {showStreaming ? (
-              <StreamingSuggestion key={debouncedKeyword} keyword={debouncedKeyword} />
+              <StreamingSuggestion
+                key={debouncedKeyword}
+                keyword={debouncedKeyword}
+                appliedFieldIds={appliedFieldIds}
+                onApply={handleApply}
+              />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
                 <div className="mb-5">

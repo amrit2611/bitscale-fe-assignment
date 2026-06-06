@@ -1,20 +1,65 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Check } from "lucide-react";
 import { useStreamingText } from "@/hooks/useStreamingText";
+
+export type Suggestion = {
+  fieldId: string;
+  value: string;
+  label: string;
+  reason: string;
+};
 
 type StreamingSuggestionProps = {
   keyword: string;
+  appliedFieldIds: Set<string>;
+  onApply: (suggestion: Suggestion) => void;
 };
 
-const suggestionPool = [
-  { label: "Company Headcount: 100-500", reason: "narrows results to mid-market" },
-  { label: "Person Location: United States", reason: "highest match density" },
-  { label: "Management Level: Director+", reason: "matches the seniority signal" },
-  { label: "Company Headcount: 50-200", reason: "best fit for early-stage GTM" },
-  { label: "Person Location: India, UK, USA", reason: "broaden the geo window" },
-  { label: "Management Level: Owner, Founder", reason: "decision-maker bias" },
+const suggestionPool: Suggestion[] = [
+  {
+    fieldId: "companyHeadcount",
+    value: "100-500",
+    label: "Company Headcount: 100-500",
+    reason: "narrows results to mid-market",
+  },
+  {
+    fieldId: "personLocation",
+    value: "United States",
+    label: "Person Location: United States",
+    reason: "highest match density",
+  },
+  {
+    fieldId: "managementLevel",
+    value: "Director+",
+    label: "Management Level: Director+",
+    reason: "matches the seniority signal",
+  },
+  {
+    fieldId: "companyHeadcount",
+    value: "50-200",
+    label: "Company Headcount: 50-200",
+    reason: "best fit for early-stage GTM",
+  },
+  {
+    fieldId: "personLocation",
+    value: "India, UK, USA",
+    label: "Person Location: India, UK, USA",
+    reason: "broadens the geo window",
+  },
+  {
+    fieldId: "managementLevel",
+    value: "Owner, Founder",
+    label: "Management Level: Owner, Founder",
+    reason: "decision-maker bias",
+  },
+  {
+    fieldId: "jobTitle",
+    value: "Director, VP, Head of",
+    label: "Job Title: Director, VP, Head of",
+    reason: "broadens the seniority match",
+  },
 ];
 
 function hashString(s: string): number {
@@ -24,14 +69,15 @@ function hashString(s: string): number {
 function deterministicSuggestions(keyword: string) {
   const h = hashString(keyword.toLowerCase());
   const resultCount = 3 + (h % 18);
-  const seen = new Set<number>();
-  const picks: typeof suggestionPool = [];
+  const seen = new Set<string>();
+  const picks: Suggestion[] = [];
   let i = 0;
-  while (picks.length < 3 && i < 12) {
+  while (picks.length < 3 && i < 14) {
     const idx = (h + i * 7) % suggestionPool.length;
-    if (!seen.has(idx)) {
-      seen.add(idx);
-      picks.push(suggestionPool[idx]);
+    const candidate = suggestionPool[idx];
+    if (!seen.has(candidate.fieldId)) {
+      seen.add(candidate.fieldId);
+      picks.push(candidate);
     }
     i += 1;
   }
@@ -50,7 +96,7 @@ function buildAnalysis(keyword: string) {
   return { text, picks };
 }
 
-export function StreamingSuggestion({ keyword }: StreamingSuggestionProps) {
+export function StreamingSuggestion({ keyword, appliedFieldIds, onApply }: StreamingSuggestionProps) {
   const { text, picks } = buildAnalysis(keyword);
   const { displayed, isComplete } = useStreamingText(text, 14);
 
@@ -97,27 +143,43 @@ export function StreamingSuggestion({ keyword }: StreamingSuggestionProps) {
             }}
             className="space-y-2"
           >
-            {picks.map((pick) => (
-              <motion.button
-                key={pick.label}
-                type="button"
-                onClick={() => console.info(`[bitscale-demo] apply suggestion: ${pick.label}`)}
-                variants={{
-                  hidden: { opacity: 0, y: 8 },
-                  show: { opacity: 1, y: 0 },
-                }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-50 transition-colors group"
-              >
-                <Sparkles className="size-4 text-indigo-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-900 truncate">{pick.label}</p>
-                  <p className="text-xs text-zinc-500 truncate">{pick.reason}</p>
-                </div>
-                <ArrowRight className="size-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </motion.button>
-            ))}
+            {picks.map((pick) => {
+              const isApplied = appliedFieldIds.has(pick.fieldId);
+              return (
+                <motion.button
+                  key={pick.label}
+                  type="button"
+                  onClick={() => onApply(pick)}
+                  variants={{
+                    hidden: { opacity: 0, y: 8 },
+                    show: { opacity: 1, y: 0 },
+                  }}
+                  whileHover={{ scale: isApplied ? 1 : 1.01 }}
+                  whileTap={{ scale: isApplied ? 1 : 0.99 }}
+                  disabled={isApplied}
+                  className={
+                    isApplied
+                      ? "w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50 transition-colors"
+                      : "w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-50 transition-colors group cursor-pointer"
+                  }
+                >
+                  {isApplied ? (
+                    <Check className="size-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <Sparkles className="size-4 text-indigo-500 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 truncate">{pick.label}</p>
+                    <p className="text-xs text-zinc-500 truncate">
+                      {isApplied ? "Applied to filter panel" : pick.reason}
+                    </p>
+                  </div>
+                  {!isApplied && (
+                    <ArrowRight className="size-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </motion.button>
+              );
+            })}
 
             <motion.p
               variants={{
@@ -126,7 +188,7 @@ export function StreamingSuggestion({ keyword }: StreamingSuggestionProps) {
               }}
               className="text-xs text-zinc-400 pt-2"
             >
-              Suggestions update as you refine the keyword. Apply any to add it as a filter on the left.
+              Click any suggestion to apply it to the filter panel on the left.
             </motion.p>
           </motion.div>
         )}
