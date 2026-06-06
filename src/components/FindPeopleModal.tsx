@@ -86,7 +86,7 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
                 Found 0 companies. Click preview to view results
               </p>
               <div className="flex items-center gap-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-orange-600">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600">
                   <Search className="size-3" />
                   8000/50000
                 </span>

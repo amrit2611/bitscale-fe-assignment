@@ -7,19 +7,21 @@ import { GridsTable } from "@/components/GridsTable";
 
 export default function Home() {
   return (
-    <div className="flex flex-1 min-h-screen">
+    <div className="flex h-full">
       <Sidebar />
-      <main className="flex-1 overflow-auto bg-zinc-50">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <WelcomeBar />
-        <div className="px-8 pb-10 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <LatestCard />
-            <DemoCard />
+        <main className="flex-1 overflow-y-auto bg-zinc-50">
+          <WelcomeBar />
+          <div className="px-4 sm:px-8 pb-10 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <LatestCard />
+              <DemoCard />
+            </div>
+            <GridsTable />
           </div>
-          <GridsTable />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

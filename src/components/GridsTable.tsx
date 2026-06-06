@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Star,
   Search,
@@ -11,9 +11,20 @@ import {
   Link2,
   Building2 as BuildingIcon,
   LayoutList,
+  Eye,
+  Pencil,
+  Copy,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { gridRows } from "@/data/grids";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Tab = "my-grids" | "starred";
 
@@ -42,6 +53,8 @@ function initials(name: string) {
 
 export function GridsTable() {
   const [tab, setTab] = useState<Tab>("my-grids");
+  const [query, setQuery] = useState("");
+  const [workbookOpen, setWorkbookOpen] = useState(true);
   const [starred, setStarred] = useState<Record<string, boolean>>({
     "4": true,
     "5": true,
@@ -49,20 +62,29 @@ export function GridsTable() {
     "10": true,
   });
 
-  const visibleRows = tab === "starred" ? gridRows.filter((r) => starred[r.id]) : gridRows;
+  const visibleRows = useMemo(() => {
+    const base = tab === "starred" ? gridRows.filter((r) => starred[r.id]) : gridRows;
+    if (!query.trim()) return base;
+    const q = query.trim().toLowerCase();
+    return base.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.editedBy.name.toLowerCase().includes(q)
+    );
+  }, [tab, query, starred]);
 
   const toggleStar = (id: string) =>
     setStarred((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6 border-b border-zinc-200 -mb-px">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-6 border-b border-zinc-200 -mb-px overflow-x-auto">
           <button
             type="button"
             onClick={() => setTab("my-grids")}
             className={cn(
-              "pb-3 text-sm font-medium border-b-2 transition-colors",
+              "pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
               tab === "my-grids"
                 ? "border-indigo-600 text-indigo-700"
                 : "border-transparent text-zinc-500 hover:text-zinc-900"
@@ -74,7 +96,7 @@ export function GridsTable() {
             type="button"
             onClick={() => setTab("starred")}
             className={cn(
-              "pb-3 text-sm font-medium border-b-2 transition-colors",
+              "pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
               tab === "starred"
                 ? "border-indigo-600 text-indigo-700"
                 : "border-transparent text-zinc-500 hover:text-zinc-900"
@@ -85,18 +107,21 @@ export function GridsTable() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="size-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search grids and workbooks..."
-              className="h-9 w-80 rounded-lg bg-zinc-100 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-indigo-200"
+              className="h-9 w-full sm:w-80 rounded-lg bg-zinc-100 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-indigo-200"
             />
           </div>
           <button
             type="button"
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+            className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 hover:bg-zinc-200 shrink-0"
             aria-label="Toggle view"
+            onClick={() => console.info("[bitscale-demo] view toggle — coming soon")}
           >
             <LayoutList className="size-4" />
           </button>
@@ -104,33 +129,52 @@ export function GridsTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[720px]">
           <thead>
-            <tr className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wide border-b border-zinc-200">
+            <tr className="text-left text-xs border-b border-zinc-200">
               <th className="py-2.5 pl-3 pr-2 w-10"></th>
               <th className="py-2.5 px-2 w-10"></th>
               <th className="py-2.5 px-2">
-                <span className="inline-flex items-center gap-1 text-zinc-700 normal-case font-medium">
+                <span className="inline-flex items-center gap-1 text-zinc-700 font-medium">
                   Name <ArrowUp className="size-3" />
                 </span>
               </th>
-              <th className="py-2.5 px-2 normal-case font-medium text-zinc-700">Edited by</th>
-              <th className="py-2.5 px-2 normal-case font-medium text-zinc-700">Last edited</th>
-              <th className="py-2.5 px-2 normal-case font-medium text-zinc-700">Actions</th>
+              <th className="py-2.5 px-2 font-medium text-zinc-700">Edited by</th>
+              <th className="py-2.5 px-2 font-medium text-zinc-700">Last edited</th>
+              <th className="py-2.5 px-2 font-medium text-zinc-700 w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
+            {visibleRows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-sm text-zinc-400">
+                  No grids match &ldquo;{query}&rdquo;.
+                </td>
+              </tr>
+            )}
             {visibleRows.map((row) => {
               const Icon = row.icon;
               const isStarred = !!starred[row.id];
+              const isExpandable = row.isWorkbook;
               return (
                 <tr
                   key={row.id}
-                  className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors"
+                  className="border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-colors"
                 >
                   <td className="py-3 pl-3 pr-2">
-                    {row.isWorkbook && (
-                      <ChevronDown className="size-4 text-zinc-400" />
+                    {isExpandable && (
+                      <button
+                        type="button"
+                        onClick={() => setWorkbookOpen((v) => !v)}
+                        aria-label={workbookOpen ? "Collapse" : "Expand"}
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "size-4 text-zinc-400 transition-transform",
+                            !workbookOpen && "-rotate-90"
+                          )}
+                        />
+                      </button>
                     )}
                   </td>
                   <td className="py-3 px-2">
@@ -181,18 +225,40 @@ export function GridsTable() {
                       >
                         {initials(row.editedBy.name)}
                       </span>
-                      <span className="text-sm text-zinc-700">{row.editedBy.name}</span>
+                      <span className="text-sm text-zinc-700 whitespace-nowrap">{row.editedBy.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 px-2 text-sm text-zinc-600">{row.lastEdited}</td>
+                  <td className="py-3 px-2 text-sm text-zinc-600 whitespace-nowrap">{row.lastEdited}</td>
                   <td className="py-3 px-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center h-7 w-7 rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
-                      aria-label="Row actions"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center h-7 w-7 rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                          aria-label="Row actions"
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => console.info(`[bitscale-demo] view ${row.name}`)}>
+                          <Eye className="size-4" /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => console.info(`[bitscale-demo] rename ${row.name}`)}>
+                          <Pencil className="size-4" /> Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => console.info(`[bitscale-demo] duplicate ${row.name}`)}>
+                          <Copy className="size-4" /> Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-rose-600"
+                          onClick={() => console.info(`[bitscale-demo] delete ${row.name}`)}
+                        >
+                          <Trash2 className="size-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               );
