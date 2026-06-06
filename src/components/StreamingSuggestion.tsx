@@ -71,15 +71,13 @@ function deterministicSuggestions(keyword: string) {
   const resultCount = 3 + (h % 18);
   const seen = new Set<string>();
   const picks: Suggestion[] = [];
-  let i = 0;
-  while (picks.length < 3 && i < 14) {
-    const idx = (h + i * 7) % suggestionPool.length;
-    const candidate = suggestionPool[idx];
+  const startIdx = h % suggestionPool.length;
+  for (let i = 0; i < suggestionPool.length && picks.length < 3; i++) {
+    const candidate = suggestionPool[(startIdx + i) % suggestionPool.length];
     if (!seen.has(candidate.fieldId)) {
       seen.add(candidate.fieldId);
       picks.push(candidate);
     }
-    i += 1;
   }
   return { resultCount, picks };
 }
