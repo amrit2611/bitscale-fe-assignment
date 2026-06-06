@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Search, ChevronDown, Save, Eye, SearchX, Lock } from "lucide-react";
 import {
   Dialog,
@@ -7,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { findPeopleFields } from "@/data/findPeopleFields";
+import { StreamingSuggestion } from "@/components/StreamingSuggestion";
 
 type FindPeopleModalProps = {
   open: boolean;
@@ -16,17 +18,35 @@ type FindPeopleModalProps = {
 const resultColumns = ["NAME", "TITLE", "HEADLINE", "LINKEDIN URL", "COMPANY", "COMPANY URL", "COMPANY"];
 
 export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedKeyword(keyword.trim()), 500);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
+  useEffect(() => {
+    if (!open) {
+      setKeyword("");
+      setDebouncedKeyword("");
+    }
+  }, [open]);
+
+  const showStreaming = debouncedKeyword.length >= 3;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1080px] p-0 overflow-hidden gap-0">
         <DialogTitle className="sr-only">Find People</DialogTitle>
         <div className="flex h-[600px]">
-          <div className="w-80 border-r border-zinc-200 bg-white flex flex-col">
+          <div className="w-80 border-r border-zinc-200 bg-white flex flex-col shrink-0">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-900">Find People</h2>
               <button
                 type="button"
                 className="text-xs text-zinc-500 hover:text-zinc-700 inline-flex items-center gap-1"
+                onClick={() => console.info("[bitscale-demo] saved search — coming soon")}
               >
                 <ChevronDown className="size-3" />
                 Saved Search
@@ -36,6 +56,7 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {findPeopleFields.map((field) => {
                 const Icon = field.icon;
+                const isKeyword = field.id === "keyword";
                 return (
                   <div key={field.id}>
                     <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 mb-1.5">
@@ -45,6 +66,8 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
                     {field.type === "input" ? (
                       <input
                         type="text"
+                        value={isKeyword ? keyword : undefined}
+                        onChange={isKeyword ? (e) => setKeyword(e.target.value) : undefined}
                         placeholder={field.placeholder}
                         className="w-full h-9 px-3 rounded-lg bg-zinc-50 border border-zinc-200 text-sm placeholder-zinc-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                       />
@@ -52,6 +75,7 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
                       <button
                         type="button"
                         className="w-full h-9 px-3 rounded-lg bg-zinc-50 border border-zinc-200 text-sm text-zinc-400 flex items-center justify-between hover:border-zinc-300"
+                        onClick={() => console.info(`[bitscale-demo] ${field.label} dropdown — coming soon`)}
                       >
                         <span>{field.placeholder}</span>
                         <ChevronDown className="size-4 text-zinc-400" />
@@ -66,6 +90,7 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
               <button
                 type="button"
                 className="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg bg-zinc-100 text-sm font-medium text-zinc-700 hover:bg-zinc-200"
+                onClick={() => console.info("[bitscale-demo] save search — coming soon")}
               >
                 <Save className="size-4" />
                 Save Search
@@ -73,6 +98,7 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
               <button
                 type="button"
                 className="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800"
+                onClick={() => console.info("[bitscale-demo] preview result — coming soon")}
               >
                 <Eye className="size-4" />
                 Preview Result
@@ -80,12 +106,12 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white flex flex-col">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100">
-              <p className="text-xs text-zinc-500">
+          <div className="flex-1 bg-white flex flex-col min-w-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 gap-4">
+              <p className="text-xs text-zinc-500 shrink-0">
                 Found 0 companies. Click preview to view results
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 shrink-0">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600">
                   <Search className="size-3" />
                   8000/50000
@@ -100,23 +126,30 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
             <div className="border-b border-zinc-100 overflow-x-auto">
               <div className="flex items-center gap-0 px-5 py-2 text-[10px] font-medium text-zinc-400 tracking-wider min-w-max">
                 {resultColumns.map((col, idx) => (
-                  <span key={idx} className="px-3 whitespace-nowrap">{col}</span>
+                  <span key={`${col}-${idx}`} className="px-3 whitespace-nowrap">{col}</span>
                 ))}
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
-              <div className="mb-5">
-                <div className="h-32 w-32 rounded-full bg-zinc-50 flex items-center justify-center">
-                  <SearchX className="size-12 text-zinc-300" strokeWidth={1.5} />
+            {showStreaming ? (
+              <StreamingSuggestion key={debouncedKeyword} keyword={debouncedKeyword} />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
+                <div className="mb-5">
+                  <div className="h-32 w-32 rounded-full bg-zinc-50 flex items-center justify-center">
+                    <SearchX className="size-12 text-zinc-300" strokeWidth={1.5} />
+                  </div>
                 </div>
+                <p className="text-sm text-zinc-600 max-w-sm">
+                  Start your Company search, preview, and import companies for enrichment by applying any filter in the left panel.
+                </p>
+                <p className="text-sm text-zinc-400 my-3">OR</p>
+                <p className="text-sm text-zinc-600">Import companies from saved Search.</p>
+                <p className="text-xs text-indigo-500 mt-4 italic">
+                  Tip: type a keyword above to see AI suggestions.
+                </p>
               </div>
-              <p className="text-sm text-zinc-600 max-w-sm">
-                Start your Company search, preview, and import companies for enrichment by applying any filter in the left panel.
-              </p>
-              <p className="text-sm text-zinc-400 my-3">OR</p>
-              <p className="text-sm text-zinc-600">Import companies from saved Search.</p>
-            </div>
+            )}
           </div>
         </div>
       </DialogContent>
