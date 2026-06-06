@@ -107,16 +107,16 @@ export function FindPeopleModal({ open, onOpenChange }: FindPeopleModalProps) {
           </div>
 
           <div className="flex-1 bg-white flex flex-col min-w-0">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 gap-4">
+            <div className="flex items-center justify-between px-5 py-3 pr-12 border-b border-zinc-100 gap-4">
               <p className="text-xs text-zinc-500 shrink-0">
                 Found 0 companies. Click preview to view results
               </p>
               <div className="flex items-center gap-4 shrink-0">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-orange-600">
                   <Search className="size-3" />
                   8000/50000
                 </span>
-                <button type="button" className="text-xs font-medium text-orange-600 hover:underline inline-flex items-center gap-1">
+                <button type="button" className="text-xs font-medium text-orange-600 hover:underline inline-flex items-center gap-1.5">
                   <Lock className="size-3" />
                   Unlock <span className="font-bold">100,000</span> leads with Enterprise Plan*
                 </button>
